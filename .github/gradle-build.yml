@@ -1,0 +1,58 @@
+name: "Gradle"
+on:
+  workflow_call:
+    inputs:
+      java_version:
+        description: "JDK version to be used when building"
+        default: "21" # Use latest JDK LTS.
+        type: "string"
+        required: false
+      gradle_extra_args:
+        description: "Extra arguments to execute Gradle with"
+        default: ""
+        type: string
+        required: false
+      gradle_warning_mode:
+        description: "Gradle warning mode"
+        default: "fail" # Fail on warnings
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: "Build"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: "Validate Gradle wrapper"
+        uses: gradle/actions/wrapper-validation@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
+
+      - name: "Setup JDK ${{ inputs.java_version }}"
+        uses: actions/setup-java@6a0805fcefea3d4657a47ac4c165951e33482018 # v4.2.2
+        with:
+          java-version: "${{ inputs.java_version }}"
+          distribution: "temurin"
+
+      - name: "Setup Gradle"
+        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70 # v3.5.0
+        with:
+          gradle-version: "wrapper"
+
+      - name: "Prepare for build"
+        env:
+          WARNING_MODE: "${{ inputs.gradle_warning_mode }}"
+        run: |
+          # Write Gradle warning mode to user home
+          mkdir -p $HOME/.gradle/
+          echo "org.gradle.warning.mode=$WARNING_MODE" >> $HOME/.gradle/gradle.properties
+
+      - name: "Build"
+        run: ./gradlew ${{ inputs.gradle_extra_args }} build
