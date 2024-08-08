@@ -41,6 +41,9 @@ jobs:
           java-version: "${{ inputs.java_version }}"
           distribution: "temurin"
 
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       - name: "Setup Gradle"
         uses: gradle/actions/setup-gradle@v4
         with:
